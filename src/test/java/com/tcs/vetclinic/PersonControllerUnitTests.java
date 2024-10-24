@@ -47,7 +47,6 @@ public class PersonControllerUnitTests {
                 assertNotNull(getResponseEntity);
                 assertEquals(createPersonResponse.getBody(), getResponseEntity.getBody().getId());
                 assertEquals(person.getName(), getResponseEntity.getBody().getName());
-                System.out.println(getResponseEntity.getBody());
             });
         });
     }
@@ -103,7 +102,6 @@ public class PersonControllerUnitTests {
             step("Проверяем, что информация перезаписалась", () -> {
                 String getUrl = "http://localhost:8080/api/person/%s".formatted(createPersonResponse.getBody());
                 ResponseEntity<Person> getResponseEntity = restTemplate.getForEntity(getUrl, Person.class);
-                System.out.println(getResponseEntity.getBody());
             });
 
         });
@@ -126,7 +124,6 @@ public class PersonControllerUnitTests {
 
                 String getUrl = "http://localhost:8080/api/person/%s".formatted(person.getId());
                 ResponseEntity<Person> getResponseEntity = restTemplate.getForEntity(getUrl, Person.class);
-                System.out.println(getResponseEntity.getBody());
             }
             catch (Exception e) {
                 String code = e.getMessage();
@@ -153,7 +150,6 @@ public class PersonControllerUnitTests {
 
                 String getUrl = "http://localhost:8080/api/person/%s".formatted(person.getId());
                 ResponseEntity<Person> getResponseEntity = restTemplate.getForEntity(getUrl, Person.class);
-                System.out.println(getResponseEntity.getBody());
             }
             catch (Exception e) {
                 String code = e.getMessage();
@@ -291,7 +287,6 @@ public class PersonControllerUnitTests {
                 ResponseEntity<Person> getResponseEntity = restTemplate.getForEntity(getUrl, Person.class);
                 assertNotNull(getResponseEntity);
                 assertEquals(createPersonResponse.getBody(), getResponseEntity.getBody().getId());
-                System.out.println(getResponseEntity.getBody());
                 assertEquals(person.getName(), getResponseEntity.getBody().getName());
             });
         });
@@ -310,7 +305,6 @@ public class PersonControllerUnitTests {
                 ResponseEntity<Person> getResponseEntity = restTemplate.getForEntity(getUrl, Person.class);
                 assertNotNull(getResponseEntity);
                 assertEquals(person.getId(), getResponseEntity.getBody().getId());
-                System.out.println(getResponseEntity.getBody());
                 assertEquals(person.getName(), getResponseEntity.getBody().getName());
             } catch (Exception e) {
                 String code = e.getMessage();
@@ -333,7 +327,6 @@ public class PersonControllerUnitTests {
                 ResponseEntity<Person> getResponseEntity = restTemplate.getForEntity(getUrl, Person.class);
                 assertNotNull(getResponseEntity);
                 assertEquals(person.getId(), getResponseEntity.getBody().getId());
-                System.out.println(getResponseEntity.getBody());
                 assertEquals(person.getName(), getResponseEntity.getBody().getName());
             } catch (Exception e) {
                 String code = e.getMessage();
