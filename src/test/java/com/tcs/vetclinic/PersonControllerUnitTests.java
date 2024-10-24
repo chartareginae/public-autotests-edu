@@ -9,7 +9,6 @@ import org.springframework.web.client.RestTemplate;
 
 
 import java.util.Collections;
-import java.util.HashMap;
 
 import static io.qameta.allure.Allure.step;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -88,24 +87,25 @@ public class PersonControllerUnitTests {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+        HttpEntity<Person> requestEntity = new HttpEntity<>(person, headers);
 
-        step("Отправляем запрос POST /person с пустыми id, name", () -> {
-            HttpEntity<Person> requestEntity = new HttpEntity<>(person, headers);
+        ResponseEntity<Long> createPersonResponse = restTemplate.exchange(
+                postUrl,
+                HttpMethod.POST,
+                requestEntity,
+                Long.class
+        );
 
-            ResponseEntity<Long> createPersonResponse = restTemplate.exchange(
-                    postUrl,
-                    HttpMethod.POST,
-                    requestEntity,
-                    Long.class
-            );
-
+        step("Отправляем запрос PUT /person/{id} с существующем id", () -> {
             String putUrl = "http://localhost:8080/api/person/%s".formatted(createPersonResponse.getBody());
             HttpEntity<Person> putRequestEntity = new HttpEntity<>(new Person("John"), headers);
             restTemplate.put(putUrl, putRequestEntity);
+            step("Проверяем, что информация перезаписалась", () -> {
+                String getUrl = "http://localhost:8080/api/person/%s".formatted(createPersonResponse.getBody());
+                ResponseEntity<Person> getResponseEntity = restTemplate.getForEntity(getUrl, Person.class);
+                System.out.println(getResponseEntity.getBody());
+            });
 
-            String getUrl = "http://localhost:8080/api/person/%s".formatted(createPersonResponse.getBody());
-            ResponseEntity<Person> getResponseEntity = restTemplate.getForEntity(getUrl, Person.class);
-            System.out.println(getResponseEntity.getBody());
         });
     }
 
@@ -118,7 +118,7 @@ public class PersonControllerUnitTests {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
-        step("Отправляем запрос POST /person с пустыми id, name", () -> {
+        step("Отправляем запрос PUT /person с несуществующbм id и ловим ошибку 404", () -> {
             try {
                 String putUrl = "http://localhost:8080/api/person/%s".formatted(person.getId());
                 HttpEntity<Person> putRequestEntity = new HttpEntity<>(new Person("John"), headers);
@@ -145,7 +145,7 @@ public class PersonControllerUnitTests {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
-        step("Отправляем запрос POST /person с пустыми id, name", () -> {
+        step("Отправляем запрос PUT /person с несуществующим id и ловим ошибку 500", () -> {
             try {
                 String putUrl = "http://localhost:8080/api/person/%s".formatted(person.getId());
                 HttpEntity<Person> putRequestEntity = new HttpEntity<>(new Person("John"), headers);
@@ -164,7 +164,7 @@ public class PersonControllerUnitTests {
     }
 
     @Test
-    @DisplayName("Изменение данных с помощью существующего id")
+    @DisplayName("Удаление данных с помощью существующего id")
     @AllureId("6")
     public void deleteTest() {
         String postUrl = "http://localhost:8080/api/person";
@@ -173,7 +173,7 @@ public class PersonControllerUnitTests {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
-        step("Отправляем запрос POST /person с пустыми id, name", () -> {
+        step("Отправляем запрос POST /person с пустым id и непустым name", () -> {
             HttpEntity<Person> requestEntity = new HttpEntity<>(person, headers);
 
             ResponseEntity<Long> createPersonResponse = restTemplate.exchange(
@@ -182,19 +182,20 @@ public class PersonControllerUnitTests {
                     requestEntity,
                     Long.class
             );
-
-            String deleteUrl = "http://localhost:8080/api/person/%s".formatted(createPersonResponse.getBody());
-            restTemplate.delete(deleteUrl);
-            step("Проверяем, что пользователь действительно удален", () -> {
-                try{
-                    String getUrl = deleteUrl.formatted(createPersonResponse.getBody());
-                    ResponseEntity<Person> getResponseEntity = restTemplate.getForEntity(getUrl, Person.class);
-                }
-                catch (Exception e){
-                    String code = e.getMessage();
-                    code = code.split(" ")[0];
-                    assertEquals("404", code);
-                }
+            step("Отправляем запрос DELETE /person/{id} с полученным id", () -> {
+                String deleteUrl = "http://localhost:8080/api/person/%s".formatted(createPersonResponse.getBody());
+                restTemplate.delete(deleteUrl);
+                step("Проверяем, что пользователь действительно удален, отправив запрос GET /person/{id} с удаленным id и получив ошибку 404", () -> {
+                    try{
+                        String getUrl = deleteUrl.formatted(createPersonResponse.getBody());
+                        ResponseEntity<Person> getResponseEntity = restTemplate.getForEntity(getUrl, Person.class);
+                    }
+                    catch (Exception e){
+                        String code = e.getMessage();
+                        code = code.split(" ")[0];
+                        assertEquals("404", code);
+                    }
+                });
             });
         });
     }
@@ -208,7 +209,7 @@ public class PersonControllerUnitTests {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
-        step("Отправляем запрос POST /person с пустыми id, name", () -> {
+        step("Отправляем запрос DELETE /person/{id} с несуществующим id и получаем ошибку 409", () -> {
             try {
                 String deleteUrl = "http://localhost:8080/api/person/%s".formatted(person.getId());
                 restTemplate.delete(deleteUrl);
@@ -230,7 +231,7 @@ public class PersonControllerUnitTests {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
-        step("Отправляем запрос POST /person с пустыми id, name", () -> {
+        step("Отправляем запрос DELETE /person/{id} с недопустимым id и получаем ошибку 500", () -> {
                 try {
                     String deleteUrl = "http://localhost:8080/api/person/%s".formatted(person.getId());
                     restTemplate.delete(deleteUrl);
@@ -247,17 +248,6 @@ public class PersonControllerUnitTests {
 //    @DisplayName("Запрос пользователя через существующий id")
 //    @AllureId("10")
 //    public void getTest() {
-////        String postUrl = "http://localhost:8080/api/person/%s";
-////        for(long i = 1L; i < 40L; i++){
-////            String getUrl = postUrl.formatted(i);
-////            try{
-////                ResponseEntity<Person> getResponseEntity = restTemplate.getForEntity(getUrl, Person.class);
-////                System.out.println(getResponseEntity);
-////            }
-////            catch (Exception e){
-////
-////            }
-////        }
 //
 //        step("Создаем пользователя и получаем его id с помощью POST/person", () -> {
 //            Person person = new Person("Ivan");
@@ -273,7 +263,7 @@ public class PersonControllerUnitTests {
 ////            );
 //            step("Отправляем запрос GET/{id} с полученным id", () -> {
 //                String getUrl = postUrl.formatted("0", "10", "ASK");
-//                ResponseEntity<Person> getResponseEntity = restTemplate.getForEntity(getUrl, Person.class);
+//                ResponseEntity<ArrayList<Person>> getResponseEntity = restTemplate.getForEntity(getUrl, ArrayList<Person.class>);
 //                System.out.println(getResponseEntity);
 //            });
 //        });
@@ -314,7 +304,7 @@ public class PersonControllerUnitTests {
         String postUrl = "http://localhost:8080/api/person/%s";
 
         Person person = new Person(1205641L, "Ivan");
-        step("Отправляем запрос GET/{id} с существующим id", () -> {
+        step("Отправляем запрос GET/{id} с несуществующим id и получаем ошибку 404", () -> {
             try {
                 String getUrl = postUrl.formatted(person.getId());
                 ResponseEntity<Person> getResponseEntity = restTemplate.getForEntity(getUrl, Person.class);
@@ -337,7 +327,7 @@ public class PersonControllerUnitTests {
         String postUrl = "http://localhost:8080/api/person/%s";
 
         Person person = new Person(-129L, "Ivan");
-        step("Отправляем запрос GET/{id} с недопустимым id", () -> {
+        step("Отправляем запрос GET/{id} с недопустимым id и получаем ошибку 500", () -> {
             try {
                 String getUrl = postUrl.formatted(person.getId());
                 ResponseEntity<Person> getResponseEntity = restTemplate.getForEntity(getUrl, Person.class);
